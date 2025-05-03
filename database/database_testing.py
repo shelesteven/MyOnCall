@@ -18,7 +18,8 @@ def new_schedule(year):
     while start_date < end_date:
         days.append({
             "date": "%s/%s/%s" % (start_date.day, start_date.month, start_date.year),
-            "Holiday": None
+            "Holiday": None,
+            "Doctor": None
         })
         start_date += delta
     db_name = get_database()
@@ -37,9 +38,6 @@ def set_holiday(holiday_date, new_name):
     collection.update_one(query, new_value)
     return True
 
-if __name__ == "__main__":
-    #add_user("Claire", "Mather", "bwahhh", False)
-    add_preference("bwahhh", "1/1/2025", 3)
 
 # Users
     # first_name: string
