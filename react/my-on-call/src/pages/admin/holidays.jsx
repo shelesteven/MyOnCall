@@ -1,10 +1,10 @@
 import "@mantine/dates/styles.css";
 
 import { useState } from "react";
-import { Button, Group, TextInput, ThemeIcon, ActionIcon, Title, Text, Checkbox, NumberInput, SimpleGrid, Paper, Badge, Card, Container, Divider, Box, Stack, Tooltip } from "@mantine/core";
+import { Button, Group, TextInput, ThemeIcon, ActionIcon, Title, Text, NumberInput, SimpleGrid, Paper, Badge, Card, Container, Divider, Box, Stack, Tooltip, Tabs, Alert, LoadingOverlay } from "@mantine/core";
 import { DatePickerInput } from "@mantine/dates";
 import { useForm } from "@mantine/form";
-import { IconTrash, IconCalendarEvent, IconPlus, IconCalendarPlus, IconCalendarDue } from "@tabler/icons-react";
+import { IconTrash, IconCalendarEvent, IconPlus, IconCalendarPlus, IconCalendarDue, IconAlertCircle, IconHome } from "@tabler/icons-react";
 
 // Mock data structure update:
 // - isVariableDate: boolean
@@ -24,17 +24,38 @@ const formatMonthDay = (month, day) => {
   return date.toLocaleDateString(undefined, { month: "long", day: "numeric" });
 };
 
+const paperStyle = {
+  width: "min(100vw, 800px)",
+  padding: "16px",
+  marginLeft: "auto",
+  marginRight: "auto",
+};
+
+// Style for consistent panels
+const panelStyle = {
+  display: "block",
+};
+
+// Paper style for holiday items
+const holidayPaperStyle = {
+  width: "100%",
+  marginLeft: "auto",
+  marginRight: "auto",
+};
+
 export default function AdminHolidays() {
   const [holidays, setHolidays] = useState(initialHolidays);
+  const [activeTab, setActiveTab] = useState("fixed");
   // State to manage the date input for adding specific dates to variable holidays
   const [specificDateInputs, setSpecificDateInputs] = useState({}); // { holidayId: dateValue }
+  const [loading, setLoading] = useState(false); // For loading state simulation
 
   const form = useForm({
     initialValues: {
       holidayName: "",
-      isVariableDate: false,
-      month: "", // Use string to allow empty initial state for NumberInput
-      day: "", // Use string to allow empty initial state for NumberInput
+      isVariableDate: activeTab === "variable",
+      month: "",
+      day: "",
     },
     validate: (values) => {
       const errors = {};
@@ -54,31 +75,46 @@ export default function AdminHolidays() {
     },
   });
 
-  const handleCreateHoliday = (values) => {
-    let newHoliday;
-    if (values.isVariableDate) {
-      newHoliday = {
-        id: Date.now(),
-        name: values.holidayName,
-        isVariableDate: true,
-        specificDates: [], // Initialize with empty array
-      };
-    } else {
-      newHoliday = {
-        id: Date.now(),
-        name: values.holidayName,
-        isVariableDate: false,
-        month: Number(values.month),
-        day: Number(values.day),
-      };
-    }
+  const handleTabChange = (value) => {
+    setActiveTab(value);
+    form.setValues({ ...form.values, isVariableDate: value === "variable" });
+  };
 
-    setHolidays([...holidays, newHoliday]);
-    form.reset();
+  const handleCreateHoliday = (values) => {
+    setLoading(true);
+
+    setTimeout(() => {
+      let newHoliday;
+      if (values.isVariableDate) {
+        newHoliday = {
+          id: Date.now(),
+          name: values.holidayName,
+          isVariableDate: true,
+          specificDates: [], // Initialize with empty array
+        };
+      } else {
+        newHoliday = {
+          id: Date.now(),
+          name: values.holidayName,
+          isVariableDate: false,
+          month: Number(values.month),
+          day: Number(values.day),
+        };
+      }
+
+      setHolidays([...holidays, newHoliday]);
+      form.reset();
+      setLoading(false);
+    }, 500); // Simulate API call
   };
 
   const handleDeleteHoliday = (idToDelete) => {
-    setHolidays(holidays.filter((holiday) => holiday.id !== idToDelete));
+    setLoading(true);
+
+    setTimeout(() => {
+      setHolidays(holidays.filter((holiday) => holiday.id !== idToDelete));
+      setLoading(false);
+    }, 300);
   };
 
   // Handler for adding a specific date to a variable holiday
@@ -86,34 +122,43 @@ export default function AdminHolidays() {
     const dateToAdd = specificDateInputs[holidayId];
     if (!dateToAdd) return; // No date selected
 
+    setLoading(true);
     const formattedDate = dateToAdd.toISOString().split("T")[0];
 
-    setHolidays(
-      holidays.map((holiday) => {
-        if (holiday.id === holidayId && holiday.isVariableDate) {
-          // Avoid adding duplicate dates
-          if (!holiday.specificDates.includes(formattedDate)) {
-            return { ...holiday, specificDates: [...holiday.specificDates, formattedDate].sort() };
+    setTimeout(() => {
+      setHolidays(
+        holidays.map((holiday) => {
+          if (holiday.id === holidayId && holiday.isVariableDate) {
+            // Avoid adding duplicate dates
+            if (!holiday.specificDates.includes(formattedDate)) {
+              return { ...holiday, specificDates: [...holiday.specificDates, formattedDate].sort() };
+            }
           }
-        }
-        return holiday;
-      })
-    );
+          return holiday;
+        })
+      );
 
-    // Clear the input for this specific holiday
-    setSpecificDateInputs((prev) => ({ ...prev, [holidayId]: null }));
+      // Clear the input for this specific holiday
+      setSpecificDateInputs((prev) => ({ ...prev, [holidayId]: null }));
+      setLoading(false);
+    }, 300);
   };
 
   // Handler for removing a specific date from a variable holiday
   const handleRemoveSpecificDate = (holidayId, dateToRemove) => {
-    setHolidays(
-      holidays.map((holiday) => {
-        if (holiday.id === holidayId && holiday.isVariableDate) {
-          return { ...holiday, specificDates: holiday.specificDates.filter((d) => d !== dateToRemove) };
-        }
-        return holiday;
-      })
-    );
+    setLoading(true);
+
+    setTimeout(() => {
+      setHolidays(
+        holidays.map((holiday) => {
+          if (holiday.id === holidayId && holiday.isVariableDate) {
+            return { ...holiday, specificDates: holiday.specificDates.filter((d) => d !== dateToRemove) };
+          }
+          return holiday;
+        })
+      );
+      setLoading(false);
+    }, 300);
   };
 
   // Handler for updating the date input state for a specific holiday
@@ -121,162 +166,276 @@ export default function AdminHolidays() {
     setSpecificDateInputs((prev) => ({ ...prev, [holidayId]: value }));
   };
 
+  // Filter holidays by type based on active tab
+  const fixedHolidays = holidays.filter((h) => !h.isVariableDate);
+  const variableHolidays = holidays.filter((h) => h.isVariableDate);
+
   return (
-    <Container size="lg" px="xs">
+    <Container size="lg" px="xs" style={{ display: "flex", justifyContent: "center" }}>
       <title>Holidays - MyOnCall</title>
-      <Box className="section" mb={30}>
-        <Title order={1} className="primary" mb="xs">
-          Manage Holidays
-        </Title>
-        <Text size="lg" c="dimmed" className="secondary">
-          Configure holidays for your on-call schedule
-        </Text>
-      </Box>
 
-      {/* Existing Holidays List - Updated */}
-      <Card shadow="sm" padding="lg" radius="md" withBorder mb={30}>
-        <Card.Section withBorder inheritPadding py="xs" mb="md">
-          <Group justify="space-between">
-            <Group>
-              <IconCalendarDue size={20} />
-              <Title order={3}>Existing Holidays</Title>
+      <Paper style={{ ...paperStyle }} shadow="xs" p="md" withBorder radius="md" mb="lg">
+        <Group mb="md">
+          <Button variant="subtle" leftSection={<IconHome size="1rem" />} component="a" href="/" compact>
+            Home
+          </Button>
+        </Group>
+
+        <Box className="section" mb={30}>
+          <Title order={1} className="primary" mb="xs">
+            Manage Holidays
+          </Title>
+          <Text size="lg" c="dimmed" className="secondary">
+            Configure holidays for your on-call schedule
+          </Text>
+        </Box>
+
+        {/* Main Content Area with Tabs */}
+        <Card shadow="sm" withBorder radius="md" mb={30} pos="relative" padding={0}>
+          <LoadingOverlay visible={loading} overlayProps={{ blur: 2 }} />
+
+          <Card.Section withBorder inheritPadding py="md" px="lg">
+            <Group justify="space-between">
+              <Group>
+                <ThemeIcon color="blue" variant="light" size={32} radius="xl">
+                  <IconCalendarDue size="1.3rem" stroke={1.5} />
+                </ThemeIcon>
+                <Title order={3}>Holidays Management</Title>
+              </Group>
+              <Badge size="lg">
+                {holidays.length} {holidays.length === 1 ? "Holiday" : "Holidays"}
+              </Badge>
             </Group>
-            <Badge>{holidays.length}</Badge>
-          </Group>
-        </Card.Section>
+          </Card.Section>
 
-        {holidays.length > 0 ? (
-          <Stack>
-            {holidays.map((holiday) => (
-              <Paper
-                key={holiday.id}
-                shadow="xs"
-                p="md"
-                withBorder
-                radius="md"
-                style={{
-                  borderLeft: `4px solid ${holiday.isVariableDate ? "var(--mantine-color-orange-6)" : "var(--mantine-color-blue-6)"}`,
-                }}>
-                <Group justify="space-between" mb="xs">
-                  <Group>
-                    <ThemeIcon color={holiday.isVariableDate ? "orange" : "blue"} variant="light" size={32} radius="xl">
-                      <IconCalendarEvent size="1.2rem" />
-                    </ThemeIcon>
-                    <Stack gap={0}>
-                      <Text fw={600} size="lg">
-                        {holiday.name}
-                      </Text>
-                      <Badge variant="dot" color={holiday.isVariableDate ? "orange" : "blue"}>
-                        {holiday.isVariableDate ? "Variable Date" : "Fixed Date"}
-                      </Badge>
-                    </Stack>
-                  </Group>
-                  <Tooltip label="Delete holiday" position="left" withArrow>
-                    <ActionIcon color="red" variant="light" onClick={() => handleDeleteHoliday(holiday.id)} radius="xl" size="lg">
-                      <IconTrash size="1.2rem" />
-                    </ActionIcon>
-                  </Tooltip>
-                </Group>
-
-                {holiday.isVariableDate ? (
-                  <Box mt="md">
-                    <Text size="sm" fw={500} mb="xs">
-                      Specific Occurrences:
-                    </Text>
-                    {holiday.specificDates.length > 0 ? (
-                      <Group gap="xs" mb="md">
-                        {holiday.specificDates.map((date) => (
-                          <Badge
-                            key={date}
-                            variant="outline"
-                            size="lg"
-                            rightSection={
-                              <ActionIcon size="xs" color="gray" radius="xl" variant="transparent" onClick={() => handleRemoveSpecificDate(holiday.id, date)}>
-                                <IconTrash size="0.75rem" />
-                              </ActionIcon>
-                            }>
-                            {date}
-                          </Badge>
-                        ))}
-                      </Group>
-                    ) : (
-                      <Text size="sm" c="dimmed" mb="md" fs="italic">
-                        No specific dates added yet.
-                      </Text>
-                    )}
-
-                    <Divider my="sm" variant="dashed" />
-
-                    {/* Add Specific Date Form */}
-                    <Group gap="xs">
-                      <DatePickerInput
-                        placeholder="Add specific date"
-                        valueFormat="YYYY-MM-DD"
-                        size="sm"
-                        style={{ flexGrow: 1 }}
-                        value={specificDateInputs[holiday.id] || null}
-                        onChange={(value) => handleSpecificDateInputChange(holiday.id, value)}
-                        rightSection={
-                          <ActionIcon color="blue" variant="subtle" onClick={() => handleAddSpecificDate(holiday.id)} disabled={!specificDateInputs[holiday.id]}>
-                            <IconPlus size="1rem" />
-                          </ActionIcon>
-                        }
-                      />
-                    </Group>
-                  </Box>
-                ) : (
-                  <Box pl="md" mt="xs">
-                    <Text fw={500} size="md">
-                      {formatMonthDay(holiday.month, holiday.day)}
-                    </Text>
-                  </Box>
+          <Tabs value={activeTab} onChange={handleTabChange} radius="md" mt="md" style={{ padding: "0 20px 20px" }}>
+            <Tabs.List grow mb="md">
+              <Tabs.Tab value="fixed" leftSection={<IconCalendarEvent size="0.9rem" />}>
+                Fixed Date Holidays
+                {fixedHolidays.length > 0 && (
+                  <Badge size="sm" ml="xs" variant="light">
+                    {fixedHolidays.length}
+                  </Badge>
                 )}
-              </Paper>
-            ))}
-          </Stack>
-        ) : (
-          <Box py={30} ta="center">
-            <Text fs="italic" c="dimmed">
-              No holidays defined yet.
-            </Text>
-          </Box>
-        )}
-      </Card>
+              </Tabs.Tab>
+              <Tabs.Tab value="variable" leftSection={<IconCalendarPlus size="0.9rem" />}>
+                Variable Date Holidays
+                {variableHolidays.length > 0 && (
+                  <Badge size="sm" ml="xs" variant="light">
+                    {variableHolidays.length}
+                  </Badge>
+                )}
+              </Tabs.Tab>
+              <Tabs.Tab value="create" leftSection={<IconPlus size="0.9rem" />}>
+                Create New Holiday
+              </Tabs.Tab>
+            </Tabs.List>
 
-      {/* Create New Holiday Form - Updated */}
-      <Card shadow="sm" padding="lg" radius="md" withBorder>
-        <Card.Section withBorder inheritPadding py="xs" mb="md">
-          <Group>
-            <IconCalendarPlus size={20} />
-            <Title order={3}>Create New Holiday</Title>
-          </Group>
-        </Card.Section>
+            {/* Fixed Date Holidays Tab */}
+            <Tabs.Panel value="fixed" style={panelStyle}>
+              <Box style={{ width: "100%", display: "flex", justifyContent: "center", padding: "0" }}>
+                {fixedHolidays.length > 0 ? (
+                  <Stack align="center" style={{ width: "100%", gap: "12px" }}>
+                    {fixedHolidays.map((holiday) => (
+                      <Paper
+                        key={holiday.id}
+                        shadow="xs"
+                        p="md"
+                        withBorder
+                        radius="md"
+                        style={{
+                          ...holidayPaperStyle,
+                          borderLeft: `4px solid var(--mantine-color-blue-6)`,
+                        }}>
+                        <Group justify="space-between" mb="xs">
+                          <Group>
+                            <ThemeIcon color="blue" variant="light" size={32} radius="xl">
+                              <IconCalendarEvent size="1.2rem" />
+                            </ThemeIcon>
+                            <div>
+                              <Text fw={600} size="lg">
+                                {holiday.name}
+                              </Text>
+                              <Text size="sm" c="dimmed">
+                                {formatMonthDay(holiday.month, holiday.day)}
+                              </Text>
+                            </div>
+                          </Group>
+                          <Tooltip label="Delete holiday" position="left" withArrow>
+                            <ActionIcon color="red" variant="light" onClick={() => handleDeleteHoliday(holiday.id)} radius="xl" size="lg">
+                              <IconTrash size="1.2rem" />
+                            </ActionIcon>
+                          </Tooltip>
+                        </Group>
+                      </Paper>
+                    ))}
+                  </Stack>
+                ) : (
+                  <Alert icon={<IconAlertCircle size="1rem" />} title="No fixed date holidays" color="blue" variant="light" style={holidayPaperStyle}>
+                    You haven't added any holidays with a fixed calendar date yet. Create one using the "Create New Holiday" tab.
+                  </Alert>
+                )}
+              </Box>
+            </Tabs.Panel>
 
-        <form className="form" onSubmit={form.onSubmit(handleCreateHoliday)}>
-          <TextInput label="Holiday Name" placeholder="e.g., Thanksgiving or Easter Sunday" mb="md" {...form.getInputProps("holidayName")} />
+            {/* Variable Date Holidays Tab */}
+            <Tabs.Panel value="variable" style={panelStyle}>
+              <Box style={{ width: "100%", display: "flex", justifyContent: "center", padding: "0" }}>
+                {variableHolidays.length > 0 ? (
+                  <Stack align="center" style={{ width: "100%", gap: "12px" }}>
+                    {variableHolidays.map((holiday) => (
+                      <Paper
+                        key={holiday.id}
+                        shadow="xs"
+                        p="md"
+                        withBorder
+                        radius="md"
+                        style={{
+                          ...holidayPaperStyle,
+                          borderLeft: `4px solid var(--mantine-color-orange-6)`,
+                        }}>
+                        <Group justify="space-between" mb="xs">
+                          <Group>
+                            <ThemeIcon color="orange" variant="light" size={32} radius="xl">
+                              <IconCalendarEvent size="1.2rem" />
+                            </ThemeIcon>
+                            <Stack gap={0}>
+                              <Text fw={600} size="lg">
+                                {holiday.name}
+                              </Text>
+                              <Badge variant="dot" color="orange" size="sm">
+                                Variable Date
+                              </Badge>
+                            </Stack>
+                          </Group>
+                          <Tooltip label="Delete holiday" position="left" withArrow>
+                            <ActionIcon color="red" variant="light" onClick={() => handleDeleteHoliday(holiday.id)} radius="xl" size="lg">
+                              <IconTrash size="1.2rem" />
+                            </ActionIcon>
+                          </Tooltip>
+                        </Group>
 
-          <Checkbox label="Date varies year-to-year (e.g., Easter)" description="Check this for holidays without a fixed date in the calendar" mb="md" {...form.getInputProps("isVariableDate", { type: "checkbox" })} />
+                        <Box mt="md" style={{ width: "100%" }}>
+                          <Text size="sm" fw={500} mb="xs">
+                            Specific Occurrences:
+                          </Text>
+                          <div style={{ width: "100%", minHeight: "40px" }}>
+                            {holiday.specificDates.length > 0 ? (
+                              <div
+                                style={{
+                                  width: "100%",
+                                  display: "flex",
+                                  flexWrap: "wrap",
+                                  gap: "8px",
+                                  marginBottom: "16px",
+                                  overflow: "hidden",
+                                }}>
+                                {holiday.specificDates.map((date) => (
+                                  <Badge
+                                    key={date}
+                                    variant="outline"
+                                    size="lg"
+                                    style={{ marginBottom: "4px" }}
+                                    rightSection={
+                                      <ActionIcon size="xs" color="gray" radius="xl" variant="transparent" onClick={() => handleRemoveSpecificDate(holiday.id, date)}>
+                                        <IconTrash size="0.75rem" />
+                                      </ActionIcon>
+                                    }>
+                                    {date}
+                                  </Badge>
+                                ))}
+                              </div>
+                            ) : (
+                              <Text size="sm" c="dimmed" mb="md" fs="italic">
+                                No specific dates added yet.
+                              </Text>
+                            )}
+                          </div>
 
-          {/* Conditionally render date inputs */}
-          {!form.values.isVariableDate && (
-            <Box mb="md">
-              <Text size="sm" mb="xs">
-                Fixed Date
-              </Text>
-              <SimpleGrid cols={{ base: 1, xs: 2 }}>
-                <NumberInput label="Month" placeholder="e.g., 1 for January" min={1} max={12} step={1} {...form.getInputProps("month")} />
-                <NumberInput label="Day" placeholder="e.g., 1 for the 1st" min={1} max={31} step={1} {...form.getInputProps("day")} />
-              </SimpleGrid>
-            </Box>
-          )}
+                          <Divider my="sm" variant="dashed" />
 
-          <Group justify="flex-end" mt="xl">
-            <Button type="submit" leftSection={<IconPlus size="1rem" />} variant="filled" size="md">
-              Create Holiday
-            </Button>
-          </Group>
-        </form>
-      </Card>
+                          {/* Add Specific Date Form */}
+                          <Group gap="xs" style={{ width: "100%" }}>
+                            <DatePickerInput placeholder="Add specific date" valueFormat="YYYY-MM-DD" size="sm" style={{ flexGrow: 1 }} value={specificDateInputs[holiday.id] || null} onChange={(value) => handleSpecificDateInputChange(holiday.id, value)} />
+                            <Button variant="light" color="blue" onClick={() => handleAddSpecificDate(holiday.id)} disabled={!specificDateInputs[holiday.id]} leftSection={<IconPlus size="1rem" />} size="sm">
+                              Add Date
+                            </Button>
+                          </Group>
+                        </Box>
+                      </Paper>
+                    ))}
+                  </Stack>
+                ) : (
+                  <Alert icon={<IconAlertCircle size="1rem" />} title="No variable date holidays" color="orange" variant="light" style={holidayPaperStyle}>
+                    You haven't added any holidays with variable dates yet. Create one using the "Create New Holiday" tab.
+                  </Alert>
+                )}
+              </Box>
+            </Tabs.Panel>
+
+            {/* Create New Holiday Tab */}
+            <Tabs.Panel value="create" style={panelStyle}>
+              <Box py="md" style={{ width: "100%", padding: "0" }}>
+                <div className="create-holiday-container" style={{ width: "100%", position: "relative" }}>
+                  <Tabs
+                    value={form.values.isVariableDate ? "variable" : "fixed"}
+                    onChange={(v) => form.setValues({ ...form.values, isVariableDate: v === "variable" })}
+                    classNames={{
+                      panel: "holiday-type-panel",
+                    }}>
+                    <Tabs.List grow mb="md" style={{ width: "100%" }}>
+                      <Tabs.Tab value="fixed" leftSection={<IconCalendarEvent size="0.9rem" />}>
+                        Fixed Date Holiday
+                      </Tabs.Tab>
+                      <Tabs.Tab value="variable" leftSection={<IconCalendarPlus size="0.9rem" />}>
+                        Variable Date Holiday
+                      </Tabs.Tab>
+                    </Tabs.List>
+
+                    <form onSubmit={form.onSubmit(handleCreateHoliday)} style={{ width: "100%" }}>
+                      <TextInput label="Holiday Name" placeholder="e.g., Thanksgiving or Easter Sunday" mb="md" withAsterisk style={{ width: "100%" }} {...form.getInputProps("holidayName")} />
+
+                      <div style={{ minHeight: "150px", width: "100%", position: "relative" }}>
+                        <div style={{ position: "absolute", width: "100%" }}>
+                          <Tabs.Panel value="fixed" style={{ ...panelStyle, position: "static" }}>
+                            <Box mb="md" style={{ width: "100%" }}>
+                              <Text size="sm" mb="xs" fw={500}>
+                                Fixed Date (same day every year)
+                              </Text>
+                              <SimpleGrid cols={{ base: 1, xs: 2 }} spacing="md">
+                                <NumberInput label="Month" placeholder="e.g., 1 for January" min={1} max={12} step={1} withAsterisk {...form.getInputProps("month")} />
+                                <NumberInput label="Day" placeholder="e.g., 1 for the 1st" min={1} max={31} step={1} withAsterisk {...form.getInputProps("day")} />
+                              </SimpleGrid>
+
+                              {form.values.month && form.values.day && (
+                                <Text size="sm" mt="xs" fw={500} c="blue">
+                                  Will occur on: {formatMonthDay(form.values.month, form.values.day)}
+                                </Text>
+                              )}
+                            </Box>
+                          </Tabs.Panel>
+
+                          <Tabs.Panel value="variable" style={{ ...panelStyle, position: "static" }}>
+                            <Alert color="blue" mb="md" style={{ width: "100%" }}>
+                              <Text size="sm">For holidays that occur on different dates each year (like Easter), create the holiday first and then add the specific dates for each year.</Text>
+                            </Alert>
+                          </Tabs.Panel>
+                        </div>
+                      </div>
+
+                      <Group justify="flex-end" mt="xl" style={{ width: "100%" }}>
+                        <Button type="submit" leftSection={<IconPlus size="1rem" />} variant="filled" size="md" color={form.values.isVariableDate ? "orange" : "blue"}>
+                          Create Holiday
+                        </Button>
+                      </Group>
+                    </form>
+                  </Tabs>
+                </div>
+              </Box>
+            </Tabs.Panel>
+          </Tabs>
+        </Card>
+      </Paper>
     </Container>
   );
 }

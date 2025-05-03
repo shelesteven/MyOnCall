@@ -3,7 +3,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
 // Router
-import { BrowserRouter, Routes, Route } from "react-router";
+import { createBrowserRouter, RouterProvider } from "react-router";
 
 // Pages
 import Index from "./pages";
@@ -13,26 +13,47 @@ import AdminSignUp from "./pages/auth/admin/sign-up";
 import AdminHolidays from "./pages/admin/holidays";
 
 // Mantine
-import { MantineProvider } from "@mantine/core";
+import { MantineProvider, createTheme } from "@mantine/core";
 
 // Styles
 import "@mantine/core/styles.css";
 import "./app.css";
 
+// Create custom theme
+const theme = createTheme({
+  primaryColor: "blue",
+  defaultRadius: "md",
+  fontFamily: "Inter, sans-serif",
+  headings: { fontFamily: "Inter, sans-serif" },
+  components: {
+    Button: {
+      defaultProps: {
+        radius: "md",
+      },
+    },
+    Card: {
+      defaultProps: {
+        radius: "md",
+      },
+    },
+  },
+});
+
+// Create router
+const router = createBrowserRouter([
+  { path: "/", element: <Index /> },
+  { path: "/auth/sign-in", element: <SignIn /> },
+  { path: "/auth/sign-up", element: <SignUp /> },
+  { path: "/auth/admin/sign-up", element: <AdminSignUp /> },
+  { path: "/admin/holidays", element: <AdminHolidays /> },
+]);
+
 // Create app
 const root = document.getElementById("root");
 createRoot(root).render(
   <StrictMode>
-    <MantineProvider forceColorScheme="light">
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/auth/sign-in" element={<SignIn />} />
-          <Route path="/auth/sign-up" element={<SignUp />} />
-          <Route path="/auth/admin/sign-up" element={<AdminSignUp />} />
-          <Route path="/admin/holidays" element={<AdminHolidays />} />
-        </Routes>
-      </BrowserRouter>
+    <MantineProvider theme={theme} forceColorScheme="light">
+      <RouterProvider router={router} />
     </MantineProvider>
   </StrictMode>
 );
