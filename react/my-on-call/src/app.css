@@ -2,6 +2,8 @@
 
 * {
   font-family: "Inter", sans-serif;
+  padding: 0;
+  margin: 0;
 }
 
 h1 {
@@ -43,6 +45,25 @@ a {
   font-size: 1rem;
   font-weight: 400;
   text-decoration: none;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #c2aa94;
+  color: #222222;
+}
+
+.foreground-primary {
+  color: #222222;
+}
+
+.foreground-secondary {
+  color: #555555;
+}
+
+.foreground-accent {
+  color: #604d3c;
 }
 
 #root {
