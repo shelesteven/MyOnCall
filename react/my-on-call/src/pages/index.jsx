@@ -68,12 +68,6 @@ export default function Index() {
             </Stack>
           </Card>
         </SimpleGrid>
-
-        <Box mt={40} ta="center">
-          <Text size="sm" c="dimmed">
-            © 2025 MyOnCall • Simplify your on-call management
-          </Text>
-        </Box>
       </Paper>
     </Container>
   );
