@@ -1,2 +1,2 @@
-intall the mongodb python library
+install the mongodb python library
 
