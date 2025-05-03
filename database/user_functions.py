@@ -26,20 +26,22 @@ def remove_user(user_email):
 
 def add_preference(email, date, priority):
     db_name = get_database()
-    collection = db_name["schedule"]
-    date_obj = collection.users.find_one({"date": date})
+    collection = db_name["Schedule"]
+    date_obj = collection.find_one({"date": date})
+    #print(date_obj)
     pref = {
         "priority": priority,
         "date": date_obj["_id"]
     }
     collection = db_name["users"]
-    user = collection.users.find_one({"email": email})
+    user = collection.find_one({"email": email})
+    #print(user["preferences"])
     query = {"email": email}
-    new_value = {"$set": {"preferences": user["preferences"].append(pref)}}
+    user["preferences"].append(pref)
+    new_value = {"$set": {"preferences": user["preferences"]}}
     collection.update_one(query, new_value)
     return True
 
     
-
 def get_user():
     return True

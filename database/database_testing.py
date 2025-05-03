@@ -38,7 +38,7 @@ def set_holiday(holiday_date, new_name):
     return True
 
 if __name__ == "__main__":
-    new_schedule(2025)
+    #add_user("Claire", "Mather", "bwahhh", False)
     add_preference("bwahhh", "1/1/2025", 3)
 
 # Users
