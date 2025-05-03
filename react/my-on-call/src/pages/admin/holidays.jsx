@@ -10,12 +10,7 @@ import { IconTrash, IconCalendarEvent, IconPlus, IconCalendarPlus, IconCalendarD
 // - isVariableDate: boolean
 // - month, day: for fixed holidays (e.g., 1, 1 for Jan 1st)
 // - specificDates: array of "YYYY-MM-DD" strings for variable holidays
-const initialHolidays = [
-  { id: 1, name: "New Year's Day", isVariableDate: false, month: 1, day: 1 },
-  { id: 2, name: "Independence Day", isVariableDate: false, month: 7, day: 4 },
-  { id: 3, name: "Christmas Day", isVariableDate: false, month: 12, day: 25 },
-  { id: 4, name: "Easter Sunday", isVariableDate: true, specificDates: ["2025-04-20", "2026-04-05"] }, // Example variable holiday
-];
+const initialHolidays = [];
 
 // Helper to format month/day
 const formatMonthDay = (month, day) => {
