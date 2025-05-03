@@ -49,7 +49,7 @@ export default function SignIn() {
 
           <form onSubmit={form.onSubmit(handleSubmit)}>
             <Stack spacing="lg">
-              <TextInput label="Email" placeholder="Enter your email address" description="We'll send you a magic link to sign in" icon={<IconLogin size="1rem" />} withAsterisk {...form.getInputProps("email")} />
+              <TextInput label="Email" placeholder="Enter your email address" icon={<IconLogin size="1rem" />} withAsterisk {...form.getInputProps("email")} />
             </Stack>
 
             <Group position="apart" mt="xl">
