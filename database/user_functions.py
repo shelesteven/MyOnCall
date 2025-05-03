@@ -21,8 +21,8 @@ def remove_user(user_email):
     
     db_name = get_database()
     collection = db_name["users"]
-    collection.remove()
-    return True
+    result = collection.delete_one({"email": user_email})
+    return result.deleted_count > 0
 
 def add_preference(email, date, priority):
     db_name = get_database()
