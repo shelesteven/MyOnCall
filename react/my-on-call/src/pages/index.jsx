@@ -1,5 +1,10 @@
 // index.jsx
 
 export default function Index() {
-  return <h1>My On Call</h1>;
+  return (
+    <>
+      <title>Home - My On Call</title>
+      <h1>My On Call</h1>
+    </>
+  );
 }
