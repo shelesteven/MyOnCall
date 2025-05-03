@@ -61,7 +61,7 @@ export default function AdminSignUp() {
 
               <TextInput label="Last Name" placeholder="Enter your last name" withAsterisk {...form.getInputProps("last_name")} />
 
-              <TextInput label="Email" placeholder="Enter your email address" withAsterisk description="This will be your admin login" {...form.getInputProps("email")} />
+              <TextInput label="Email" placeholder="Enter your email address" withAsterisk {...form.getInputProps("email")} />
             </Stack>
 
             <Group position="apart" mt="xl">
