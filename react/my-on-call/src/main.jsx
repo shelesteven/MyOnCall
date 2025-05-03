@@ -10,6 +10,7 @@ import Index from "./pages";
 import SignIn from "./pages/auth/sign-in";
 import SignUp from "./pages/auth/sign-up";
 import AdminSignUp from "./pages/auth/admin/sign-up";
+import AdminHolidays from "./pages/admin/holidays";
 
 // Mantine
 import { MantineProvider } from "@mantine/core";
@@ -29,6 +30,7 @@ createRoot(root).render(
           <Route path="/auth/sign-in" element={<SignIn />} />
           <Route path="/auth/sign-up" element={<SignUp />} />
           <Route path="/auth/admin/sign-up" element={<AdminSignUp />} />
+          <Route path="/admin/holidays" element={<AdminHolidays />} />
         </Routes>
       </BrowserRouter>
     </MantineProvider>
