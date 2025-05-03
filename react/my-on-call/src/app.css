@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Quicksand:wght@300..700&display=swap");
 
 * {
   font-family: "Inter", sans-serif;
@@ -6,8 +6,16 @@
   margin: 0;
 }
 
+.inter {
+  font-family: "Inter", sans-serif;
+}
+
+.quicksand {
+  font-family: "Quicksand", sans-serif;
+}
+
 h1 {
-  font-size: 2.5rem;
+  font-size: 3rem;
   font-weight: 900;
 }
 
@@ -51,19 +59,27 @@ body {
   margin: 0;
   padding: 0;
   background-color: #c2aa94;
-  color: #222222;
+  color: #2c2c2c;
 }
 
 .foreground-primary {
-  color: #222222;
+  color: #2c2c2c;
 }
 
 .foreground-secondary {
-  color: #555555;
+  color: #3c3c3c;
 }
 
 .foreground-accent {
   color: #604d3c;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
 }
 
 #root {
