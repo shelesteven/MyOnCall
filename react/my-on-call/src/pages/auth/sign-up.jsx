@@ -1,32 +1,71 @@
-import { Button, Group, TextInput, Card, Container, Box, Title, Text, Stack, Paper, Divider } from "@mantine/core";
+import { useState } from "react";
+import { Button, Group, TextInput, Card, Container, Box, Title, Text, Stack, Paper, Divider, PasswordInput, LoadingOverlay, Alert } from "@mantine/core";
 import { useForm } from "@mantine/form";
-import { IconUserPlus, IconArrowLeft, IconCheck } from "@tabler/icons-react";
+import { IconUserPlus, IconArrowLeft, IconCheck, IconAlertCircle } from "@tabler/icons-react";
+import { useNavigate } from "react-router";
+
+// Import our authentication utilities
+import { createUser, signIn } from "../../utils/auth";
+import { initializeDefaultData } from "../../utils/dataManagement";
 
 export default function SignUp() {
+  const navigate = useNavigate();
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
   const form = useForm({
     initialValues: {
-      first_name: "",
-      last_name: "",
+      name: "",
       email: "",
-      admin: false,
+      password: "",
+      confirmPassword: "",
     },
     validate: {
-      first_name: (value) => (value.length < 2 ? "First name must be at least 2 characters long" : null),
-      last_name: (value) => (value.length < 2 ? "Last name must be at least 2 characters long" : null),
+      name: (value) => (value.length < 2 ? "Name must be at least 2 characters long" : null),
       email: (value) => (/^\S+@\S+$/.test(value) ? null : "Invalid email"),
+      password: (value) => (value.length < 6 ? "Password must be at least 6 characters long" : null),
+      confirmPassword: (value, values) => (value !== values.password ? "Passwords do not match" : null),
     },
   });
 
-  const handleSubmit = (values) => {
-    console.log(values);
-    // Add form submission logic here
+  const handleSubmit = async (values) => {
+    setError("");
+    setLoading(true);
+
+    try {
+      // Create the user account
+      const userData = {
+        name: values.name,
+        email: values.email,
+        password: values.password,
+      };
+
+      // Create user (this only registers, doesn't log in)
+      await createUser(userData, false);
+
+      // Now sign in with the new credentials
+      await signIn(values.email, values.password);
+
+      // Initialize default data
+      initializeDefaultData();
+
+      // Navigate to schedules page
+      navigate("/schedules");
+    } catch (err) {
+      console.error("Sign up error:", err);
+      setError(err.message || "Failed to create account. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <Container size="sm" px="xs" className="form-container">
       <title>Sign Up - MyOnCall</title>
 
-      <Paper shadow="xs" p="md" withBorder radius="md" mb="lg">
+      <Paper shadow="xs" p="md" withBorder radius="md" mb="lg" pos="relative">
+        <LoadingOverlay visible={loading} overlayBlur={2} />
+
         <Group mb="md">
           <Button variant="subtle" leftSection={<IconArrowLeft size="1rem" />} component="a" href="/" compact>
             Back to Home
@@ -50,23 +89,39 @@ export default function SignUp() {
             </Group>
           </Card.Section>
 
-          <Divider label="All fields are required" labelPosition="center" my="md" />
+          {error && (
+            <Alert icon={<IconAlertCircle size="1rem" />} title="Error" color="red" mb="md">
+              {error}
+            </Alert>
+          )}
 
           <form onSubmit={form.onSubmit(handleSubmit)}>
             <Stack spacing="lg">
-              <TextInput label="First Name" placeholder="Enter your first name" withAsterisk {...form.getInputProps("first_name")} />
-
-              <TextInput label="Last Name" placeholder="Enter your last name" withAsterisk {...form.getInputProps("last_name")} />
+              <TextInput label="Full Name" placeholder="Enter your full name" withAsterisk {...form.getInputProps("name")} />
 
               <TextInput label="Email" placeholder="Enter your email address" withAsterisk {...form.getInputProps("email")} />
+
+              <PasswordInput label="Password" placeholder="Create a password" withAsterisk {...form.getInputProps("password")} />
+
+              <PasswordInput label="Confirm Password" placeholder="Confirm your password" withAsterisk {...form.getInputProps("confirmPassword")} />
             </Stack>
+
+            <Group mt="md" position="apart">
+              <Text size="sm" component="a" href="/auth/sign-in" c="blue">
+                Already have an account? Sign in
+              </Text>
+
+              <Text size="sm" component="a" href="/auth/admin/sign-up" c="blue">
+                Register as administrator
+              </Text>
+            </Group>
 
             <Group position="apart" mt="xl">
               <Button variant="outline" component="a" href="/" leftSection={<IconArrowLeft size="1rem" />}>
                 Cancel
               </Button>
 
-              <Button type="submit" leftSection={<IconCheck size="1rem" />} variant="filled">
+              <Button type="submit" leftSection={<IconCheck size="1rem" />} variant="filled" loading={loading}>
                 Create Account
               </Button>
             </Group>

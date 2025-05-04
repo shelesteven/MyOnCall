@@ -9,8 +9,10 @@ import { createBrowserRouter, RouterProvider } from "react-router";
 import Index from "./pages";
 import SignIn from "./pages/auth/sign-in";
 import SignUp from "./pages/auth/sign-up";
+import Schedules from "./pages/schedules";
 import AdminSignUp from "./pages/auth/admin/sign-up";
 import AdminHolidays from "./pages/admin/holidays";
+import AdminSchedules from "./pages/admin/schedules";
 
 // Mantine
 import { MantineProvider, createTheme } from "@mantine/core";
@@ -45,7 +47,9 @@ const router = createBrowserRouter([
   { path: "/auth/sign-in", element: <SignIn /> },
   { path: "/auth/sign-up", element: <SignUp /> },
   { path: "/auth/admin/sign-up", element: <AdminSignUp /> },
+  { path: "/schedules", element: <Schedules /> },
   { path: "/admin/holidays", element: <AdminHolidays /> },
+  { path: "/admin/schedules", element: <AdminSchedules /> },
 ]);
 
 // Create app

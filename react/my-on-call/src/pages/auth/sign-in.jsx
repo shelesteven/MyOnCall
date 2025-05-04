@@ -1,20 +1,52 @@
-import { Button, Group, TextInput, Card, Container, Box, Title, Text, Paper, Stack, Divider } from "@mantine/core";
+import { Button, Group, TextInput, Card, Container, Box, Title, Text, Paper, Stack, Divider, PasswordInput, Alert } from "@mantine/core";
 import { useForm } from "@mantine/form";
-import { IconLogin, IconArrowLeft } from "@tabler/icons-react";
+import { IconLogin, IconArrowLeft, IconAlertCircle } from "@tabler/icons-react";
+import { useNavigate } from "react-router";
+import { useState } from "react";
+
+// Import our authentication utilities
+import { signIn, isAdmin } from "../../utils/auth";
+import { initializeDefaultData } from "../../utils/dataManagement";
 
 export default function SignIn() {
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
   const form = useForm({
     initialValues: {
       email: "",
+      password: "",
     },
     validate: {
       email: (value) => (/^\S+@\S+$/.test(value) ? null : "Invalid email"),
+      password: (value) => (value.length >= 6 ? null : "Password should be at least 6 characters"),
     },
   });
 
-  const handleSubmit = (values) => {
-    console.log(values);
-    // Add form submission logic here
+  const handleSubmit = async (values) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Attempt to sign in
+      const result = await signIn(values.email, values.password);
+
+      // Initialize default data (holidays, team members)
+      initializeDefaultData();
+
+      // Redirect based on user role
+      if (isAdmin()) {
+        navigate("/admin/schedules");
+      } else {
+        navigate("/schedules");
+      }
+    } catch (error) {
+      console.error("Sign in error:", error);
+      setError(error.message || "Failed to sign in. Please check your credentials.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -45,19 +77,30 @@ export default function SignIn() {
             </Group>
           </Card.Section>
 
-          <Divider label="Enter your email" labelPosition="center" my="md" />
+          {error && (
+            <Alert icon={<IconAlertCircle size="1rem" />} title="Authentication Error" color="red" mb="md">
+              {error}
+            </Alert>
+          )}
 
           <form onSubmit={form.onSubmit(handleSubmit)}>
             <Stack spacing="lg">
-              <TextInput label="Email" placeholder="Enter your email address" icon={<IconLogin size="1rem" />} withAsterisk {...form.getInputProps("email")} />
+              <TextInput label="Email" placeholder="Enter your email address" withAsterisk {...form.getInputProps("email")} />
+
+              <PasswordInput label="Password" placeholder="Enter your password" withAsterisk {...form.getInputProps("password")} />
             </Stack>
 
             <Group position="apart" mt="xl">
-              <Button variant="outline" component="a" href="/" leftSection={<IconArrowLeft size="1rem" />}>
-                Cancel
-              </Button>
+              <Stack gap="xs">
+                <Button variant="subtle" component="a" href="/auth/sign-up" compact>
+                  Don't have an account? Sign up
+                </Button>
+                <Button variant="subtle" component="a" href="/auth/admin/sign-up" compact>
+                  Register as administrator
+                </Button>
+              </Stack>
 
-              <Button type="submit" leftSection={<IconLogin size="1rem" />} variant="filled">
+              <Button type="submit" leftSection={<IconLogin size="1rem" />} variant="filled" loading={loading}>
                 Sign In
               </Button>
             </Group>

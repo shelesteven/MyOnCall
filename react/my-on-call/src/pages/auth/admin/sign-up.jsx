@@ -1,32 +1,74 @@
-import { Button, Group, TextInput, Title, Text, Card, Container, Box, Stack, Paper, Divider, Badge } from "@mantine/core";
+import { useState } from "react";
+import { Button, Group, TextInput, Title, Text, Card, Container, Box, Stack, Paper, Divider, Badge, PasswordInput, LoadingOverlay, Alert } from "@mantine/core";
 import { useForm } from "@mantine/form";
-import { IconUserPlus, IconArrowLeft, IconCheck, IconShieldLock } from "@tabler/icons-react";
+import { IconUserPlus, IconArrowLeft, IconCheck, IconShieldLock, IconAlertCircle } from "@tabler/icons-react";
+import { useNavigate } from "react-router";
+
+// Import our authentication utilities
+import { createUser, signIn } from "../../../utils/auth";
+import { initializeDefaultData } from "../../../utils/dataManagement";
 
 export default function AdminSignUp() {
+  const navigate = useNavigate();
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
   const form = useForm({
     initialValues: {
-      first_name: "",
-      last_name: "",
+      name: "",
       email: "",
-      admin: true,
+      password: "",
+      confirmPassword: "",
+      organizationName: "", // Added organization name field
     },
     validate: {
-      first_name: (value) => (value.length < 2 ? "First name must be at least 2 characters long" : null),
-      last_name: (value) => (value.length < 2 ? "Last name must be at least 2 characters long" : null),
+      name: (value) => (value.length < 2 ? "Name must be at least 2 characters long" : null),
       email: (value) => (/^\S+@\S+$/.test(value) ? null : "Invalid email"),
+      password: (value) => (value.length < 6 ? "Password must be at least 6 characters long" : null),
+      confirmPassword: (value, values) => (value !== values.password ? "Passwords do not match" : null),
+      organizationName: (value) => (value.length < 2 ? "Organization name is required" : null),
     },
   });
 
-  const handleSubmit = (values) => {
-    console.log(values);
-    // Add form submission logic here
+  const handleSubmit = async (values) => {
+    setError("");
+    setLoading(true);
+
+    try {
+      // Create admin user
+      const userData = {
+        name: values.name,
+        email: values.email,
+        password: values.password,
+        organizationName: values.organizationName,
+      };
+
+      // Create admin user (true flag indicates admin role)
+      await createUser(userData, true);
+
+      // Automatically sign in with the new admin credentials
+      await signIn(values.email, values.password);
+
+      // Initialize default data
+      initializeDefaultData();
+
+      // Redirect to admin schedules page
+      navigate("/admin/schedules");
+    } catch (err) {
+      console.error("Admin sign up error:", err);
+      setError(err.message || "Failed to create admin account. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <Container size="sm" px="xs" className="form-container">
       <title>Admin Sign Up - MyOnCall</title>
 
-      <Paper shadow="xs" p="md" withBorder radius="md" mb="lg">
+      <Paper shadow="xs" p="md" withBorder radius="md" mb="lg" pos="relative">
+        <LoadingOverlay visible={loading} overlayBlur={2} />
+
         <Group mb="md">
           <Button variant="subtle" leftSection={<IconArrowLeft size="1rem" />} component="a" href="/" compact>
             Back to Home
@@ -53,23 +95,35 @@ export default function AdminSignUp() {
             </Group>
           </Card.Section>
 
-          <Divider label="All fields are required" labelPosition="center" my="md" />
+          {error && (
+            <Alert icon={<IconAlertCircle size="1rem" />} title="Error" color="red" mb="md">
+              {error}
+            </Alert>
+          )}
 
           <form onSubmit={form.onSubmit(handleSubmit)}>
             <Stack spacing="lg">
-              <TextInput label="First Name" placeholder="Enter your first name" withAsterisk {...form.getInputProps("first_name")} />
+              <TextInput label="Full Name" placeholder="Enter your full name" withAsterisk {...form.getInputProps("name")} />
 
-              <TextInput label="Last Name" placeholder="Enter your last name" withAsterisk {...form.getInputProps("last_name")} />
+              <TextInput label="Organization Name" placeholder="Enter your organization name" withAsterisk {...form.getInputProps("organizationName")} />
 
               <TextInput label="Email" placeholder="Enter your email address" withAsterisk {...form.getInputProps("email")} />
+
+              <PasswordInput label="Password" placeholder="Create a password" withAsterisk {...form.getInputProps("password")} />
+
+              <PasswordInput label="Confirm Password" placeholder="Confirm your password" withAsterisk {...form.getInputProps("confirmPassword")} />
             </Stack>
+
+            <Text mt="md" size="sm" component="a" href="/auth/sign-in" c="blue">
+              Already have an account? Sign in
+            </Text>
 
             <Group position="apart" mt="xl">
               <Button variant="outline" component="a" href="/" leftSection={<IconArrowLeft size="1rem" />}>
                 Cancel
               </Button>
 
-              <Button type="submit" leftSection={<IconUserPlus size="1rem" />} variant="filled" color="blue">
+              <Button type="submit" leftSection={<IconUserPlus size="1rem" />} variant="filled" color="blue" loading={loading}>
                 Create Admin Account
               </Button>
             </Group>

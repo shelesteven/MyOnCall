@@ -1,16 +1,15 @@
 import "@mantine/dates/styles.css";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button, Group, TextInput, ThemeIcon, ActionIcon, Title, Text, NumberInput, SimpleGrid, Paper, Badge, Card, Container, Divider, Box, Stack, Tooltip, Tabs, Alert, LoadingOverlay } from "@mantine/core";
 import { DatePickerInput } from "@mantine/dates";
 import { useForm } from "@mantine/form";
 import { IconTrash, IconCalendarEvent, IconPlus, IconCalendarPlus, IconCalendarDue, IconAlertCircle, IconHome } from "@tabler/icons-react";
+import { useNavigate } from "react-router";
 
-// Mock data structure update:
-// - isVariableDate: boolean
-// - month, day: for fixed holidays (e.g., 1, 1 for Jan 1st)
-// - specificDates: array of "YYYY-MM-DD" strings for variable holidays
-const initialHolidays = [];
+// Import our client-side data management utilities
+import { getAllHolidays, addHoliday } from "../../utils/dataManagement";
+import { isAuthenticated, isAdmin } from "../../utils/auth";
 
 // Helper to format month/day
 const formatMonthDay = (month, day) => {
@@ -39,11 +38,40 @@ const holidayPaperStyle = {
 };
 
 export default function AdminHolidays() {
-  const [holidays, setHolidays] = useState(initialHolidays);
+  const navigate = useNavigate();
+  const [holidays, setHolidays] = useState([]);
   const [activeTab, setActiveTab] = useState("fixed");
   // State to manage the date input for adding specific dates to variable holidays
   const [specificDateInputs, setSpecificDateInputs] = useState({}); // { holidayId: dateValue }
-  const [loading, setLoading] = useState(false); // For loading state simulation
+  const [loading, setLoading] = useState(true); // Start with loading state
+
+  // Check authentication on component mount
+  useEffect(() => {
+    // Verify admin status
+    const checkAuth = async () => {
+      if (!isAuthenticated()) {
+        navigate("/auth/sign-in");
+        return;
+      }
+
+      if (!isAdmin()) {
+        navigate("/schedules"); // Redirect non-admin users
+        return;
+      }
+
+      // Load holidays data
+      try {
+        const holidaysData = await getAllHolidays();
+        setHolidays(holidaysData);
+      } catch (error) {
+        console.error("Error loading holidays:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, [navigate]);
 
   const form = useForm({
     initialValues: {
@@ -75,85 +103,142 @@ export default function AdminHolidays() {
     form.setValues({ ...form.values, isVariableDate: value === "variable" });
   };
 
-  const handleCreateHoliday = (values) => {
+  const handleCreateHoliday = async (values) => {
     setLoading(true);
 
-    setTimeout(() => {
+    try {
       let newHoliday;
       if (values.isVariableDate) {
         newHoliday = {
-          id: Date.now(),
           name: values.holidayName,
-          isVariableDate: true,
+          type: "variable",
           specificDates: [], // Initialize with empty array
+          date: new Date().toISOString().split("T")[0], // Use current date as placeholder for variable holidays
         };
       } else {
+        // Format date as YYYY-MM-DD using current year
+        const currentYear = new Date().getFullYear();
+        const formattedDate = `${currentYear}-${String(values.month).padStart(2, "0")}-${String(values.day).padStart(2, "0")}`;
+
         newHoliday = {
-          id: Date.now(),
           name: values.holidayName,
-          isVariableDate: false,
+          type: "fixed",
+          date: formattedDate,
           month: Number(values.month),
           day: Number(values.day),
         };
       }
 
-      setHolidays([...holidays, newHoliday]);
+      // Add the holiday using our data management utility
+      await addHoliday(newHoliday);
+
+      // Refresh holidays list
+      const updatedHolidays = await getAllHolidays();
+      setHolidays(updatedHolidays);
+
+      // Reset form
       form.reset();
+    } catch (error) {
+      console.error("Error creating holiday:", error);
+    } finally {
       setLoading(false);
-    }, 500); // Simulate API call
+    }
   };
 
-  const handleDeleteHoliday = (idToDelete) => {
+  const handleDeleteHoliday = async (idToDelete) => {
     setLoading(true);
 
-    setTimeout(() => {
+    try {
+      // Filter out locally first for immediate UI feedback
       setHolidays(holidays.filter((holiday) => holiday.id !== idToDelete));
+
+      // In a real implementation, we would call an API here
+      // For now, we'll just update localStorage directly
+      const updatedHolidays = holidays.filter((holiday) => holiday.id !== idToDelete);
+      localStorage.setItem("moc_holidays", JSON.stringify(updatedHolidays));
+    } catch (error) {
+      console.error("Error deleting holiday:", error);
+      // Refresh the holidays list to ensure consistent state
+      const refreshedHolidays = await getAllHolidays();
+      setHolidays(refreshedHolidays);
+    } finally {
       setLoading(false);
-    }, 300);
+    }
   };
 
   // Handler for adding a specific date to a variable holiday
-  const handleAddSpecificDate = (holidayId) => {
+  const handleAddSpecificDate = async (holidayId) => {
     const dateToAdd = specificDateInputs[holidayId];
     if (!dateToAdd) return; // No date selected
 
     setLoading(true);
     const formattedDate = dateToAdd.toISOString().split("T")[0];
 
-    setTimeout(() => {
-      setHolidays(
-        holidays.map((holiday) => {
-          if (holiday.id === holidayId && holiday.isVariableDate) {
-            // Avoid adding duplicate dates
-            if (!holiday.specificDates.includes(formattedDate)) {
-              return { ...holiday, specificDates: [...holiday.specificDates, formattedDate].sort() };
-            }
+    try {
+      // Update locally first for immediate UI feedback
+      const updatedHolidays = holidays.map((holiday) => {
+        if (holiday.id === holidayId && holiday.type === "variable") {
+          // Avoid adding duplicate dates
+          if (!holiday.specificDates) {
+            holiday.specificDates = [];
           }
-          return holiday;
-        })
-      );
+          if (!holiday.specificDates.includes(formattedDate)) {
+            return {
+              ...holiday,
+              specificDates: [...(holiday.specificDates || []), formattedDate].sort(),
+            };
+          }
+        }
+        return holiday;
+      });
+
+      setHolidays(updatedHolidays);
+
+      // In a real implementation, we would call an API here
+      // For now, we'll just update localStorage directly
+      localStorage.setItem("moc_holidays", JSON.stringify(updatedHolidays));
 
       // Clear the input for this specific holiday
       setSpecificDateInputs((prev) => ({ ...prev, [holidayId]: null }));
+    } catch (error) {
+      console.error("Error adding specific date:", error);
+      // Refresh the holidays list to ensure consistent state
+      const refreshedHolidays = await getAllHolidays();
+      setHolidays(refreshedHolidays);
+    } finally {
       setLoading(false);
-    }, 300);
+    }
   };
 
   // Handler for removing a specific date from a variable holiday
-  const handleRemoveSpecificDate = (holidayId, dateToRemove) => {
+  const handleRemoveSpecificDate = async (holidayId, dateToRemove) => {
     setLoading(true);
 
-    setTimeout(() => {
-      setHolidays(
-        holidays.map((holiday) => {
-          if (holiday.id === holidayId && holiday.isVariableDate) {
-            return { ...holiday, specificDates: holiday.specificDates.filter((d) => d !== dateToRemove) };
-          }
-          return holiday;
-        })
-      );
+    try {
+      // Update locally first for immediate UI feedback
+      const updatedHolidays = holidays.map((holiday) => {
+        if (holiday.id === holidayId && holiday.type === "variable") {
+          return {
+            ...holiday,
+            specificDates: (holiday.specificDates || []).filter((d) => d !== dateToRemove),
+          };
+        }
+        return holiday;
+      });
+
+      setHolidays(updatedHolidays);
+
+      // In a real implementation, we would call an API here
+      // For now, we'll just update localStorage directly
+      localStorage.setItem("moc_holidays", JSON.stringify(updatedHolidays));
+    } catch (error) {
+      console.error("Error removing specific date:", error);
+      // Refresh the holidays list to ensure consistent state
+      const refreshedHolidays = await getAllHolidays();
+      setHolidays(refreshedHolidays);
+    } finally {
       setLoading(false);
-    }, 300);
+    }
   };
 
   // Handler for updating the date input state for a specific holiday
@@ -161,9 +246,9 @@ export default function AdminHolidays() {
     setSpecificDateInputs((prev) => ({ ...prev, [holidayId]: value }));
   };
 
-  // Filter holidays by type based on active tab
-  const fixedHolidays = holidays.filter((h) => !h.isVariableDate);
-  const variableHolidays = holidays.filter((h) => h.isVariableDate);
+  // Filter holidays by type
+  const fixedHolidays = holidays.filter((h) => h.type === "fixed");
+  const variableHolidays = holidays.filter((h) => h.type === "variable");
 
   return (
     <Container size="lg" px="xs" style={{ display: "flex", justifyContent: "center" }}>
@@ -171,8 +256,8 @@ export default function AdminHolidays() {
 
       <Paper style={{ ...paperStyle }} shadow="xs" p="md" withBorder radius="md" mb="lg">
         <Group mb="md">
-          <Button variant="subtle" leftSection={<IconHome size="1rem" />} component="a" href="/" compact>
-            Home
+          <Button variant="subtle" leftSection={<IconHome size="1rem" />} component="a" href="/admin/schedules" compact>
+            Dashboard
           </Button>
         </Group>
 
@@ -252,7 +337,7 @@ export default function AdminHolidays() {
                                 {holiday.name}
                               </Text>
                               <Text size="sm" c="dimmed">
-                                {formatMonthDay(holiday.month, holiday.day)}
+                                {formatMonthDay(holiday.month, holiday.day)} (Date: {holiday.date})
                               </Text>
                             </div>
                           </Group>
@@ -315,7 +400,7 @@ export default function AdminHolidays() {
                             Specific Occurrences:
                           </Text>
                           <div style={{ width: "100%", minHeight: "40px" }}>
-                            {holiday.specificDates.length > 0 ? (
+                            {holiday.specificDates && holiday.specificDates.length > 0 ? (
                               <div
                                 style={{
                                   width: "100%",
