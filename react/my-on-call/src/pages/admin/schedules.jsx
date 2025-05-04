@@ -53,25 +53,25 @@ const paperStyle = {
 const useAddTeamMemberForm = () => {
   const [inviteModalOpened, setInviteModalOpened] = useState(false);
   const [successModalOpened, setSuccessModalOpened] = useState(false);
-  const [invitedEmail, setInvitedEmail] = useState('');
-  
+  const [invitedEmail, setInvitedEmail] = useState("");
+
   const inviteForm = useForm({
     initialValues: {
-      email: '',
+      email: "",
     },
     validate: {
-      email: (value) => (/^\S+@\S+$/.test(value) ? null : 'Invalid email address'),
+      email: (value) => (/^\S+@\S+$/.test(value) ? null : "Invalid email address"),
     },
   });
 
   const handleInviteSubmit = async (values) => {
     // Store the email for the success message
     setInvitedEmail(values.email);
-    
+
     // Close the invite modal and open the success modal
     setInviteModalOpened(false);
     setSuccessModalOpened(true);
-    
+
     // Reset form
     inviteForm.reset();
   };
@@ -131,17 +131,9 @@ export default function AdminSchedules() {
   const [holidays, setHolidays] = useState([]);
   const [teamMembers, setTeamMembers] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
-  
+
   // Add Team Member functionality
-  const {
-    inviteModalOpened,
-    setInviteModalOpened,
-    successModalOpened,
-    setSuccessModalOpened,
-    invitedEmail,
-    inviteForm,
-    handleInviteSubmit
-  } = useAddTeamMemberForm();
+  const { inviteModalOpened, setInviteModalOpened, successModalOpened, setSuccessModalOpened, invitedEmail, inviteForm, handleInviteSubmit } = useAddTeamMemberForm();
 
   // Load data on component mount
   useEffect(() => {
@@ -249,7 +241,7 @@ export default function AdminSchedules() {
           return "Only one team member can be assigned per day";
         }
         return null;
-      }
+      },
     },
   });
 
@@ -397,22 +389,22 @@ export default function AdminSchedules() {
     try {
       // Generate for the entire current year
       const currentYear = new Date().getFullYear();
-      
+
       // Start from January 1st
       const startDate = new Date(currentYear, 0, 1);
-      
+
       // End on December 31st
       const endDate = new Date(currentYear, 11, 31);
 
       // Show a more descriptive message in the loading state
       setLoading(true);
-      
+
       await generateSchedules(startDate.toISOString().split("T")[0], endDate.toISOString().split("T")[0]);
 
       // After generating the whole year, just load data for the current view (month)
       const viewStartDate = new Date(selectedMonth);
       viewStartDate.setDate(1); // First day of selected month
-      
+
       const viewEndDate = new Date(selectedMonth);
       viewEndDate.setMonth(viewEndDate.getMonth() + 1);
       viewEndDate.setDate(0); // Last day of selected month
@@ -531,22 +523,13 @@ export default function AdminSchedules() {
                       {getMonthYearString(selectedMonth)}
                     </Text>
                   </Group>
-                  
+
                   <Group>
-                    <Button 
-                      variant={editMode ? "filled" : "light"} 
-                      color={editMode ? "blue" : "gray"}
-                      leftSection={<IconEdit size="1rem" />} 
-                      onClick={handleToggleEditMode}
-                    >
+                    <Button variant={editMode ? "filled" : "light"} color={editMode ? "blue" : "gray"} leftSection={<IconEdit size="1rem" />} onClick={handleToggleEditMode}>
                       {editMode ? "Exit Edit Mode" : "Edit Schedule"}
                     </Button>
                     {editMode && (
-                      <Button 
-                        variant="light" 
-                        leftSection={<IconCalendarStats size="1rem" />} 
-                        onClick={handleBulkEdit}
-                      >
+                      <Button variant="light" leftSection={<IconCalendarStats size="1rem" />} onClick={handleBulkEdit}>
                         Bulk Assign
                       </Button>
                     )}
@@ -809,7 +792,7 @@ export default function AdminSchedules() {
               <Text fw={600} mb="sm">
                 Assign Team Members:
               </Text>
-              
+
               <Alert color="blue" mb="md">
                 <Text size="sm">Only one team member should be assigned per day according to current policy.</Text>
               </Alert>
@@ -839,14 +822,15 @@ export default function AdminSchedules() {
                     onChange={(event) => {
                       const checked = event.currentTarget.checked;
                       const value = member.id.toString();
-                      
+
                       if (checked) {
                         // If this checkbox is being checked, uncheck all others first
-                        form.setFieldValue('assignees', [value]);
+                        form.setFieldValue("assignees", [value]);
                       } else {
                         // If this checkbox is being unchecked, just remove it
-                        form.setFieldValue('assignees', 
-                          form.values.assignees.filter(item => item !== value)
+                        form.setFieldValue(
+                          "assignees",
+                          form.values.assignees.filter((item) => item !== value)
                         );
                       }
                     }}
@@ -929,12 +913,7 @@ export default function AdminSchedules() {
       {/* Invite Team Member Modal */}
       <Modal opened={inviteModalOpened} onClose={() => setInviteModalOpened(false)} title={<Title order={4}>Invite Team Member</Title>} size="md" centered>
         <form onSubmit={inviteForm.onSubmit(handleInviteSubmit)}>
-          <TextInput
-            label="Email Address"
-            placeholder="Enter team member's email"
-            withAsterisk
-            {...inviteForm.getInputProps("email")}
-          />
+          <TextInput label="Email Address" placeholder="Enter team member's email" withAsterisk {...inviteForm.getInputProps("email")} />
           <Group justify="flex-end" mt="md">
             <Button variant="default" onClick={() => setInviteModalOpened(false)}>
               Cancel

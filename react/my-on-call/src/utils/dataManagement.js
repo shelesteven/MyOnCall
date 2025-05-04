@@ -187,10 +187,10 @@ export const generateSchedules = async (startDate, endDate) => {
 
     // Get existing schedules
     let schedules = getLocalData(STORAGE_KEYS.SCHEDULES) || [];
-    
+
     // Filter out schedules outside our date range to keep them intact
-    schedules = schedules.filter(s => s.date < startDate || s.date > endDate);
-    
+    schedules = schedules.filter((s) => s.date < startDate || s.date > endDate);
+
     // Create rotation patterns - various ways to shuffle team members
     const rotationPatterns = [
       // Pattern 1: High availability members first, then low
@@ -198,35 +198,34 @@ export const generateSchedules = async (startDate, endDate) => {
         const availabilityScore = { high: 3, medium: 2, low: 1 };
         return availabilityScore[b.availability] - availabilityScore[a.availability];
       }),
-      
+
       // Pattern 2: Random shuffle
       [...teamMembers].sort(() => Math.random() - 0.5),
-      
+
       // Pattern 3: Alphabetical by name
       [...teamMembers].sort((a, b) => a.name.localeCompare(b.name)),
-      
+
       // Pattern 4: Reverse alphabetical
       [...teamMembers].sort((a, b) => b.name.localeCompare(a.name)),
-      
+
       // Pattern 5: By ID in reverse
       [...teamMembers].sort((a, b) => b.id - a.id),
     ];
-    
+
     // Weighting system - repeat high availability members more often in the roster
     const weightedTeamMemberIds = [];
-    teamMembers.forEach(member => {
-      const weight = member.availability === "high" ? 3 : 
-                     member.availability === "medium" ? 2 : 1;
-      
+    teamMembers.forEach((member) => {
+      const weight = member.availability === "high" ? 3 : member.availability === "medium" ? 2 : 1;
+
       for (let i = 0; i < weight; i++) {
         weightedTeamMemberIds.push(member.id.toString());
       }
     });
-    
+
     // Calculate date factor for more variety
     const currentDate = new Date();
     const dateFactor = currentDate.getDate() + currentDate.getMonth();
-    
+
     // Create schedule entries for each day in the range
     for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
       const date = d.toISOString().split("T")[0];
@@ -235,14 +234,14 @@ export const generateSchedules = async (startDate, endDate) => {
 
       // Find if this date is a holiday
       const holiday = holidays.find((h) => h.date === date);
-      
+
       // Choose pattern based on day of week
       const patternIndex = (dayOfWeek + dateFactor) % rotationPatterns.length;
       const pattern = rotationPatterns[patternIndex];
-      
+
       // Assign one team member
       let assigneeId;
-      
+
       if (holiday) {
         // For holidays, assign randomly from all team members
         assigneeId = teamMembers[Math.floor(Math.random() * teamMembers.length)].id.toString();
@@ -253,7 +252,7 @@ export const generateSchedules = async (startDate, endDate) => {
         // For weekdays, use the rotation pattern and day of month to select
         assigneeId = pattern[dayOfMonth % pattern.length].id.toString();
       }
-      
+
       // Create new schedule entry
       schedules.push({
         id: `schedule_${date}`,
